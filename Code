@@ -1,0 +1,49 @@
+Working Code:#include "mbed.h"
+#include "TextLCD-master/TextLCD.h"
+#include <string> // Required for using the string class
+
+// I2C bus declaration, using the standard Nucleo pins
+I2C i2c_lcd(D14, D15); // sda, scl
+
+// --- Constants ---
+const int LCD_WIDTH = 16;
+// Scroll speed: 1 second / 2 characters = 0.5 sec/char = 500,000 microseconds
+const int SCROLL_DELAY_US = 500000;
+
+int main() {
+    // 1. Initialize the LCD object correctly inside main()
+    //    We use your confirmed I2C address, 0x27.
+    TextLCD_I2C lcd(&i2c_lcd, (0x27 << 1), TextLCD::LCD16x2);
+
+    // 2. Define the text lines *before* the loop
+    std::string line0_text = "EMBEDDED SYSTEM DESIGN WITH ARM   "; // Add spaces for smooth looping
+    std::string line1_text = "Functioning";
+    
+    int scroll_position = 0;
+
+    // 3. The infinite loop handles the animation
+    while (true) {
+        // --- Update Line 0 (Scrolling Text) ---
+        // Extract a 16-character "window" from the long string
+        std::string sub = line0_text.substr(scroll_position, LCD_WIDTH);
+        
+        // Position cursor and print the window for the top line
+        lcd.locate(0, 0);
+        lcd.printf(sub.c_str());
+
+        // --- Update Line 1 (Static Text) ---
+        lcd.locate(0, 1);
+        lcd.printf("%-16s", line1_text.c_str()); // Print and pad with spaces to clear old text
+
+        // 4. Control the speed
+        wait_us(SCROLL_DELAY_US);
+
+        // Move to the next character position for the next frame
+        scroll_position++;
+
+        // If we reach the end of the string, loop back to the start
+        if (scroll_position >= line0_text.length() - LCD_WIDTH) {
+            scroll_position = 0;
+        }
+    }
+}
